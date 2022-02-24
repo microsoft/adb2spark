@@ -1,14 +1,80 @@
-# Project
+# Guidance for migrating from Azure Databricks to Synapse Spark Analytics
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
+> This repo contains guidance including code samples to document challenges one might face while migrating 
+> from Azure Databricks to Synapse Spark and solutions to these challenges.
 
-As the maintainer of this project, please make a few updates:
+| Issue | Reason | Solution | Related files |
+| ----- | ------ | -------- | ------------- |
+| HttpException | TBF | TBF | TBF |
+| Tables which needs graphframes library (no PK, UK tables) are giving error | Graphframes jar used by ADB is not the public version of library and thus differs from one used in Spark | Setup correct Graphframes jar | Code sample - Graphframes |
+| Date Format Issue | Occurs when statistics are collected for the date column during checkpointing. These statistics are not used for filter file-pruning and thus can be safely switched off without impacting performance | Add spark configuration to turn off stats collection for delta | Code sample - Date Format |
+| SQL Paas connection error | TBF | TBF | TBF |
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+**Code sample - Date Format**
+```
+spark.conf.set("spark.microsoft.delta.stats.collect", "false") # turning off statistics
+tableExample = DeltaTable.forPath(spark, centralized_table_path)
+tableExample.recomputeStatistics() # removing existing statistics, needed to execute only once
+```
+
+**Code sample - Graphframes**
+
+*How to setup graphframes:*
+1. Generated a whl file to add to the workspace following steps to generate the whl file.
+2. Upload the generated whl file and the jar for same version to the spark pool.
+3. Test the installation of graphframes by executing example from official docs.
+
+*Steps to generate whl file:*
+Several resources available for generating whl file like the one below:
+1. Download required zip version [from here](https://spark-packages.org/package/graphframes/graphframes). Unzip setup.py available in path graphrames-zip-folder/python/setup.py
+2. Modify the setup.py to have some basic info, sample setup.py at the end of the doc.
+3. Install wheel: `pip install wheel setuptools`
+4. Build whl file: `python path/to/setup.py bdist_wheel`. Whl file would be generated in the graphrames-zip-folder/python/dist/
+5. Test that package is installed using whl file locally: `python3 -m pip install dist/graphframes-0.8.2-py3-none-any.whl`
+
+Sample setup.py:
+```
+"""A setuptools based setup module.
+See:
+https://packaging.python.org/guides/distributing-packages-using-setuptools/
+https://github.com/pypa/sampleproject
+"""
+
+# Always prefer setuptools over distutils
+from setuptools import setup, find_packages
+import pathlib
+
+VERSION = '0.0.1'
+DESCRIPTION = 'My first Python package'
+LONG_DESCRITPTION = 'My first Python package with a slightly longer description'
+
+setup(
+
+    # There are some restrictions on what makes a valid project name
+    # specification here:
+    # https://packaging.python.org/specifications/core-metadata/#name
+    name='graphframes',  # Required
+
+    version='0.8.2',  # Required
+
+    description='A sample Python project',  # Optional
+
+    author='Author Name',  # Optional
+
+    package_dir={'': 'graphframes'},  # Optional
+
+    packages=find_packages(where='graphframes'),  # Required
+
+    python_requires='>=3.6, <4',
+    project_urls={  # Optional
+        'Bug Reports': 'https://github.com/pypa/sampleproject/issues',
+        'Funding': 'https://donate.pypi.org',
+        'Say Thanks!': 'http://saythanks.io/to/example',
+        'Source': 'https://github.com/pypa/sampleproject/',
+    },
+)
+```
+
 
 ## Contributing
 
